@@ -3,6 +3,7 @@ package com.example.weatherapp.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weatherapp.domain.location.LocationTracker
@@ -21,6 +22,9 @@ class WeatherViewModel @Inject constructor(
     var state by mutableStateOf(WeatherState())
         private set
 
+    var stateLive = MutableLiveData<WeatherState>(WeatherState())
+        private set
+
     fun loadWeatherInfo() {
         viewModelScope.launch {
             state = state.copy(
@@ -28,6 +32,7 @@ class WeatherViewModel @Inject constructor(
                 isLoading = true,
                 error = null
             )
+            stateLive.postValue(state)
             locationTracker.getCurrentLocation()?.let { location ->
                 when(val result = repository.getWeatherData(
                     latitude = location.latitude,
@@ -39,6 +44,7 @@ class WeatherViewModel @Inject constructor(
                             isLoading = false,
                             error = null
                         )
+                        stateLive.postValue(state)
                     }
                     is Resource.Error -> {
                         state = state.copy(
@@ -46,6 +52,7 @@ class WeatherViewModel @Inject constructor(
                             isLoading = false,
                             error = result.message
                         )
+                        stateLive.postValue(state)
                     }
                 }
             } ?: run {
@@ -54,6 +61,7 @@ class WeatherViewModel @Inject constructor(
                     isLoading = false,
                     error = "Couldn't get location"
                 )
+                stateLive.postValue(state)
             }
         }
     }
